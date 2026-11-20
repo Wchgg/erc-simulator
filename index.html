@@ -346,23 +346,8 @@
     </style>
   </head>
   <body>
-    <!-- ================= 访问密码门 ================= -->
-    <section class="gate" id="gate">
-      <div class="gatecard" id="gate-card">
-        <div class="gic" aria-hidden="true">🔒</div>
-        <h1>ERC <span class="hl">应变模拟器</span></h1>
-        <p class="gsub">内部训练页面，请输入访问密码后进入。</p>
-        <form id="gate-form" autocomplete="off">
-          <label for="gate-pw">访问密码</label>
-          <input type="password" id="gate-pw" placeholder="请输入密码" autocomplete="current-password" enterkeyhint="go" />
-          <div class="gerr hidden" id="gate-err" role="alert"></div>
-          <button type="submit" class="btn btn-primary gbtn" id="gate-btn">进入模拟器</button>
-        </form>
-        <p class="gfoot">内部训练 · 情境为教学虚构</p>
-      </div>
-    </section>
 
-    <div class="wrap hidden" id="app-main">
+    <div class="wrap" id="app-main">
 
       <!-- ================= 选场景 ================= -->
       <section id="screen-select">
@@ -384,7 +369,6 @@
         <p style="margin:0 0 10px;color:var(--ink2);font-size:13.5px;line-height:1.65">不打整场事故，只练一条流程：通报、疏散、HAZMAT、除污、救护、复归，逐条对着知识库的程序走一遍。每局结尾给出完整步骤清单，标出你错过的步骤。<span id="drill-progress" style="color:var(--accent);font-weight:700"></span></p>
         <div class="scgrid" id="drillgrid"></div>
         <div style="display:flex;justify-content:center;margin-top:22px">
-          <button type="button" class="lockbtn" id="btn-lock">🔒 锁定页面</button>
         </div>
         <p class="foot">内部训练 · 情境为教学虚构 · 内容为行业通用应变做法</p>
       </section>
@@ -2722,66 +2706,6 @@ $('modal-root').innerHTML =
 $('btn-dstart').addEventListener('click', function () { startDrill(di); });
 $('btn-dback').addEventListener('click', function () { $('modal-root').innerHTML = ''; });
 }
-
-/* ---------- 访问密码门（仅比对杂凑，解锁状态只存本标签页） ---------- */
-var GATE_HASH = '815b88ba75843b1a2335244b33276f12e1bd77d5c8cf6a50c756f0a32f7ec7d7';
-function gateShowApp() {
-  $('gate').classList.add('hidden');
-  $('app-main').classList.remove('hidden');
-}
-function gateShowLock(focusIt) {
-  $('app-main').classList.add('hidden');
-  $('gate').classList.remove('hidden');
-  $('gate-pw').value = '';
-  $('gate-err').classList.add('hidden');
-  window.scrollTo(0, 0);
-  if (focusIt) setTimeout(function () { try { $('gate-pw').focus(); } catch (e) {} }, 60);
-}
-function gateHex(buf) {
-  var b = new Uint8Array(buf), s = '';
-  for (var i = 0; i < b.length; i++) s += ('0' + b[i].toString(16)).slice(-2);
-  return s;
-}
-try {
-  if (sessionStorage.getItem('ercSimUnlocked') === '1') gateShowApp(); else gateShowLock(true);
-} catch (e) { gateShowLock(true); }
-$('gate-form').addEventListener('submit', function (ev) {
-  ev.preventDefault();
-  var v = $('gate-pw').value;
-  var err = $('gate-err');
-  if (!v) { err.textContent = '请先输入密码。'; err.classList.remove('hidden'); return; }
-  if (!window.crypto || !crypto.subtle || !window.TextEncoder) {
-    err.textContent = '当前浏览器不支持安全验证，请换一个浏览器打开本页。';
-    err.classList.remove('hidden');
-    return;
-  }
-  $('gate-btn').disabled = true;
-  crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (buf) {
-    $('gate-btn').disabled = false;
-    if (gateHex(buf) === GATE_HASH) {
-      try { sessionStorage.setItem('ercSimUnlocked', '1'); } catch (e) {}
-      err.classList.add('hidden');
-      gateShowApp();
-      window.scrollTo(0, 0);
-    } else {
-      err.textContent = '密码不正确，请再试一次。';
-      err.classList.remove('hidden');
-      var card = $('gate-card');
-      card.classList.remove('shake');
-      void card.offsetWidth;
-      card.classList.add('shake');
-      try { $('gate-pw').select(); } catch (e) {}
-    }
-  }, function () {
-    $('gate-btn').disabled = false;
-    err.textContent = '验证时出了问题，请再试一次。';
-    err.classList.remove('hidden');
-  });
-});
-$('btn-lock').addEventListener('click', function () {
-  try { sessionStorage.removeItem('ercSimUnlocked'); } catch (e) {}
-  gateShowLock(true);
-});
 
 renderSelect();
 renderDrills();
